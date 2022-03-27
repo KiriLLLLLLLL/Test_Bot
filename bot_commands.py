@@ -1,13 +1,14 @@
-import datetime, random
+import datetime, random, requests
 from telegram import *
 from telegram.ext import Updater, CommandHandler, CallbackContext
-
+from pprint import pprint
+from for_bot_tokens import weather_bot_token
 
 def hi_command(update: Update, context: CallbackContext):
     update.message.reply_text(f'Hi {update.effective_user.first_name}')
 
 def help_command(update: Update, context: CallbackContext):
-    update.message.reply_text(f'/hi\n/time\n/help')
+    update.message.reply_text(f'/hi - приветствие\n/time - узнать время\n/help - список команд\n/wtr - узнать погоду')
 
 def time_command(update: Update, context: CallbackContext):
     update.message.reply_text(f'{datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")}')
@@ -45,10 +46,6 @@ def candle_command(update: Update, context: CallbackContext):
         if candy == 1:
             update.message.reply_text('Победил 1 игрок')
 
-
-def on_message(update: Update, context: CallbackContext):
-    a = update.message.text
-    return a
 def build_menu(buttons, n_cols,
                header_buttons=None,
                footer_buttons=None):
@@ -70,12 +67,10 @@ def game_command(update: Update, context: CallbackContext):
     reply_markup = InlineKeyboardMarkup(item)
     update.message.reply_text('Пожалуйста, выберите:', reply_markup=reply_markup)
 
-def button(update: Update, context: CallbackContext):
+def button_game(update: Update, context: CallbackContext):
     player = update.callback_query
     choices = ["rock", "paper", "scissors"]
-
     computer = random.choice(choices)
-
     if player.data == computer:
         player.edit_message_text(f"You: {player.data}, Bot: {computer}  Tie!")
     if player.data == "scissors":
@@ -94,5 +89,50 @@ def button(update: Update, context: CallbackContext):
         if computer == "scissors":
             player.edit_message_text(f"You: {player.data}, Bot: {computer}  You win!")
 
+def weather_command(update: Update, context: CallbackContext):
+    update.message.reply_text(f'В каком городе Вы хотите узнать погоду?\nВведите название города на английском')
 
+def get_weather(update: Update, context: CallbackContext):
+    iqons = {
+        "Clear": "Ясно \U00002600",
+        "Clouds": "Облачно \U00002601",
+        "Rain": "Дождь \U00002614",
+        "Drizzle": "Дождь \U00002614",
+        "Thunderstorm": "Гроза \U000026A1",
+        "Snow": "Снег \U0001F328",
+        "Mist": "Туман \U0001F32B"
+    }
+
+    try:
+        r = requests.get(
+            f"https://api.openweathermap.org/data/2.5/weather?q={update.message.text}&appid={weather_bot_token}&units=metric"
+        )
+        data = r.json()
+        # pprint(data)
+
+        city = data["name"]
+        cur_weather = data["main"]["temp"]
+        weather_description = data["weather"][0]["main"]
+
+        if weather_description in iqons:
+            wd = iqons[weather_description]
+        else:
+            wd = "Не апокалипсис конечно, но лучше сам посмотри!"
+
+        humidity = data["main"]["humidity"]
+        pressure = data["main"]["pressure"]
+        wind = data["wind"]["speed"]
+        sunrise = datetime.datetime.fromtimestamp(data["sys"]["sunrise"]).strftime('%d-%m-%Y %H:%M')
+        sunset = datetime.datetime.fromtimestamp(data["sys"]["sunset"]).strftime('%d-%m-%Y %H:%M')
+        length_of_day = datetime.datetime.fromtimestamp(data["sys"]["sunset"]) - datetime.datetime.fromtimestamp(data["sys"]["sunrise"])
+        update.message.reply_text(f"***{datetime.datetime.now().strftime('%d-%m-%Y %H:%M')}***\n"
+              f"В {city} сегодня\nТемпература: {cur_weather}C° {wd}\nВлажность: {humidity}%\n"
+              f"Давление: {pressure} мм.рт.ст\nВетер: {wind} м.с\n"
+              f"Восход: {sunrise}\nЗакат: {sunset}\n"
+              f"Световой день: {length_of_day}\n"
+              f"Cпасибо, что воспользовались ботом!!!\n*** Хорошего дня!!! ***"
+              )
+
+    except:
+        update.message.reply_text("\U00002620 Введите название города на английском! \U00002620")
 
