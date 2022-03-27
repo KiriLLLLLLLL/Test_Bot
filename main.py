@@ -1,6 +1,6 @@
 
 from telegram import *
-from telegram.ext import Updater, CommandHandler, CallbackContext, MessageHandler, Filters
+from telegram.ext import Updater, CommandHandler, CallbackContext, MessageHandler, Filters, CallbackQueryHandler
 from bot_commands import *
 
 
@@ -13,7 +13,7 @@ updater.dispatcher.add_handler(CommandHandler('time', time_command))
 updater.dispatcher.add_handler(CommandHandler('help', help_command))
 updater.dispatcher.add_handler(CommandHandler('game', game_command))
 updater.dispatcher.add_handler(MessageHandler(Filters.all, on_message))
-
+updater.dispatcher.add_handler(CallbackQueryHandler(button))
 
 print('server start')
 updater.start_polling()

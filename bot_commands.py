@@ -49,48 +49,50 @@ def candle_command(update: Update, context: CallbackContext):
 def on_message(update: Update, context: CallbackContext):
     a = update.message.text
     return a
-
+def build_menu(buttons, n_cols,
+               header_buttons=None,
+               footer_buttons=None):
+    menu = [buttons[i:i + n_cols] for i in range(0, len(buttons), n_cols)]
+    if header_buttons:
+        menu.insert(0, [header_buttons])
+    if footer_buttons:
+        menu.append([footer_buttons])
+    return menu
 
 def game_command(update: Update, context: CallbackContext):
-    item = [InlineKeyboardButton('камень', callback_data='rock'),
-            InlineKeyboardButton('бумага', callback_data='paper'),
-            InlineKeyboardButton('ножницы', callback_data='scissors')
+    item = [
+        [
+            InlineKeyboardButton("камень", callback_data='rock'),
+            InlineKeyboardButton("бумага", callback_data='paper'),
+            InlineKeyboardButton("ножницы", callback_data='scissors')
+        ]
     ]
+    reply_markup = InlineKeyboardMarkup(item)
+    update.message.reply_text('Пожалуйста, выберите:', reply_markup=reply_markup)
 
-    while True:
-        choices = ["rock", "paper", "scissors"]
+def button(update: Update, context: CallbackContext):
+    player = update.callback_query
+    choices = ["rock", "paper", "scissors"]
 
-        computer = random.choice(choices)
-        player = None
+    computer = random.choice(choices)
 
-        while player not in choices:
-            player = msg.lower()
+    if player.data == computer:
+        player.edit_message_text(f"You: {player.data}, Bot: {computer}  Tie!")
+    if player.data == "scissors":
+        if computer == "rock":
+            player.edit_message_text(f"You: {player.data}, Bot: {computer}  You loose!")
+        if computer == "paper":
+            player.edit_message_text(f"You: {player.data}, Bot: {computer}  You win!")
+    if player.data == "paper":
+        if computer == "scissors":
+            player.edit_message_text(f"You: {player.data}, Bot: {computer}  You loose!")
+        if computer == "rock":
+            player.edit_message_text(f"You: {player.data}, Bot: {computer}  You win!")
+    if player.data == "rock":
+        if computer == "paper":
+            player.edit_message_text(f"You: {player.data}, Bot: {computer}  You loose!")
+        if computer == "scissors":
+            player.edit_message_text(f"You: {player.data}, Bot: {computer}  You win!")
 
-        if player == computer:
 
-            update.message.reply_text("Tie!")
-        if player == "scissors":
-            if computer == "rock":
 
-                update.message.reply_text("You loose!")
-            if computer == "paper":
-
-                update.message.reply_text("You win!")
-        if player == "paper":
-            if computer == "scissors":
-
-                update.message.reply_text("You loose!")
-            if computer == "rock":
-
-                update.message.reply_text("You win!")
-        if player == "rock":
-            if computer == "paper":
-
-                update.message.reply_text("You loose!")
-            if computer == "scissors":
-
-                update.message.reply_text("You win!")
-
-        play_again = on_message(update, context).lower()
-        if play_again == 'выйти':
-            break
